@@ -1,9 +1,13 @@
 from snippets.models import Snippet
+from snippets.pagination import MyPageNumberPagination
+from snippets.pagination import MyLimitOffsetPagination
+from snippets.pagination import MyCursorPagination
 from snippets.serializers import SnippetSerializer
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 
 # 基于类的视图
 
@@ -12,9 +16,15 @@ class SnippetList(APIView):
     列出所有的snippets或者创建一个新的snippet。
     """
     def get(self, request, format=None):
+        # pg=PageNumberPagination()
+        # pg=MyPageNumberPagination()
+        # pg=MyLimitOffsetPagination()
+        pg=MyCursorPagination()
         snippets = Snippet.objects.all()
-        serializer = SnippetSerializer(snippets, many=True)
-        return Response(serializer.data)
+        pg_snippets=pg.paginate_queryset(queryset=snippets,request=request,view=self)
+        serializer = SnippetSerializer(pg_snippets, many=True)
+        # return Response(serializer.data)
+        return pg.get_paginated_response(serializer.data)
 
     def post(self, request, format=None):
         serializer = SnippetSerializer(data=request.data)
